@@ -2,6 +2,7 @@ package com.kevinmdunne.chess.ui;
 
 import java.awt.BorderLayout;
 import java.awt.GraphicsConfiguration;
+import java.awt.Point;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
@@ -21,6 +22,9 @@ import javax.vecmath.Vector3f;
 import com.kevinmdunne.chess.model.Board;
 import com.kevinmdunne.chess.model.Piece;
 import com.kevinmdunne.chess.model.Space;
+import com.kevinmdunne.chess.ui.message.MessagePanel;
+import com.kevinmdunne.chess.ui.pieces.PieceFactory;
+import com.kevinmdunne.chess.ui.pieces.PieceUI;
 import com.sun.j3d.utils.behaviors.mouse.MouseRotate;
 import com.sun.j3d.utils.geometry.Primitive;
 import com.sun.j3d.utils.picking.PickCanvas;
@@ -31,10 +35,18 @@ public class BoardUI extends MouseAdapter {
 
 	private Board board;
 	private PickCanvas pickCanvas;
+	private BranchGroup topLevelGroup;
+	private TransformGroup topLevelGroup2;
+	private SimpleUniverse universe;
+	
+	private GameUI parent;
+	
+	private ISelectable selectedPiece;
 	
 	private SpaceUI[][] spaces;
 
-	public BoardUI(JPanel container) {
+	public BoardUI(GameUI parent,JPanel container) {
+		this.parent = parent;
 		this.createUI(container);
 	}
 
@@ -43,39 +55,39 @@ public class BoardUI extends MouseAdapter {
 
 		GraphicsConfiguration config = SimpleUniverse.getPreferredConfiguration();
 		Canvas3D canvas = new Canvas3D(config);
-
 		container.add(BorderLayout.CENTER, canvas);
 
-		SimpleUniverse universe = new SimpleUniverse(canvas);
+		universe = new SimpleUniverse(canvas);
 		universe.getViewingPlatform().setNominalViewingTransform();
-
-		TransformGroup tranformGroup = new TransformGroup();
-		tranformGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_READ);
-		tranformGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
+		topLevelGroup = new BranchGroup();
+		topLevelGroup.setCapability(BranchGroup.ALLOW_DETACH);
 		
+		topLevelGroup2 = new TransformGroup();
+		topLevelGroup2.setCapability(TransformGroup.ALLOW_TRANSFORM_READ);
+		topLevelGroup2.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
 		BoundingSphere bounds = new BoundingSphere(new Point3d(0.0,0.0,0.0), 100.0);
 		MouseRotate behavior = new MouseRotate();
 		behavior.setFactor(0.01f);
-		behavior.setTransformGroup(tranformGroup);
+		behavior.setTransformGroup(topLevelGroup2);
 		behavior.setSchedulingBounds(bounds);	
-		tranformGroup.addChild(behavior);
+		topLevelGroup2.addChild(behavior);
+		createBoard(topLevelGroup2);
+		topLevelGroup.addChild(topLevelGroup2);
 		
-		createBoard(tranformGroup);
-
-		BranchGroup group = new BranchGroup();
-		group.addChild(tranformGroup);
-		addLights(group);
+		addLights(topLevelGroup);
 		
 		universe.getViewingPlatform().setNominalViewingTransform();
-		universe.addBranchGraph(group);
+		universe.addBranchGraph(topLevelGroup);
 		
-		rotateBoard(tranformGroup);
+		rotateBoard(topLevelGroup2);
 		
-		pickCanvas = new PickCanvas(canvas, group);
+		pickCanvas = new PickCanvas(canvas, topLevelGroup);
 		pickCanvas.setMode(PickCanvas.GEOMETRY);
 		
 		universe.getCanvas().addMouseListener(this);
 		universe.getCanvas().addMouseMotionListener(this);
+		
+		canvas.setDoubleBufferEnable(true);
 	}
 	
 	private void createBoard(Group group){
@@ -104,14 +116,16 @@ public class BoardUI extends MouseAdapter {
 		}
 	}
 	
-	private void placePieces(){
+	public void placePieces(){
+		PieceFactory factory = new PieceFactory();
+		
 		for(int x = 0;x < 8;x++){
 			for(int y = 0;y < 8;y++){
 				Space space = this.board.getSpace(x, y);
 				if(space.isOccupied()){
 					Piece piece = space.getOccupant();
 					SpaceUI spaceUI = this.spaces[x][y];
-					PieceUI pieceUI = new PieceUI(piece);
+					PieceUI pieceUI = factory.createPieceUI(piece);
 					Group parentGroup = (Group)spaceUI.getParent();
 					
 					Vector3f vector = new Vector3f(0, 0.06f, 0);
@@ -119,7 +133,7 @@ public class BoardUI extends MouseAdapter {
 					Transform3D transform = new Transform3D();
 					transform.setTranslation(vector);
 					tg.setTransform(transform);
-					tg.addChild(pieceUI);
+					tg.addChild((Primitive)pieceUI);
 					
 					BranchGroup bg = new BranchGroup();
 					bg.addChild(tg);
@@ -131,13 +145,40 @@ public class BoardUI extends MouseAdapter {
 	
 	private void rotateBoard(TransformGroup tranformGroup){
 		Transform3D transformX = new Transform3D();
-		transformX.rotX(0.3f);
+		transformX.rotX(0.4f);
 		tranformGroup.setTransform(transformX);
 	}
 
 	public void setBoard(Board board) {
 		this.board = board;
+	}
+	
+	public void refresh(){
+		this.topLevelGroup.detach();
+		this.topLevelGroup.removeAllChildren();
+		
+		topLevelGroup2 = new TransformGroup();
+		topLevelGroup2.setCapability(TransformGroup.ALLOW_TRANSFORM_READ);
+		topLevelGroup2.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
+		BoundingSphere bounds = new BoundingSphere(new Point3d(0.0,0.0,0.0), 100.0);
+		MouseRotate behavior = new MouseRotate();
+		behavior.setFactor(0.01f);
+		behavior.setTransformGroup(topLevelGroup2);
+		behavior.setSchedulingBounds(bounds);	
+		topLevelGroup2.addChild(behavior);
+		createBoard(topLevelGroup2);
+		topLevelGroup.addChild(topLevelGroup2);
+		
+		addLights(topLevelGroup);
+		
+		universe.getViewingPlatform().setNominalViewingTransform();
+		universe.addBranchGraph(topLevelGroup);
+
+		rotateBoard(topLevelGroup2);
+		
 		this.placePieces();
+//		Canvas3D canvas = this.universe.getCanvas();
+//		canvas.repaint();
 	}
 
 	protected void addLights(BranchGroup b) {
@@ -157,21 +198,50 @@ public class BoardUI extends MouseAdapter {
 		b.addChild(light);
 	}
 	
+	private boolean isSelectionValid(PickResult result){
+		if(result != null){
+			Primitive shape = (Primitive) result.getNode(PickResult.PRIMITIVE);
+			if (shape != null) {
+				if(shape instanceof PieceUI){
+					PieceUI piece = (PieceUI)shape;
+					if(parent.getController().isWhitePlayersTurn() == piece.isWhite()){
+						return true;
+					}
+				}else if(shape instanceof SpaceUI){
+					if(this.selectedPiece != null){
+						return true;
+					}
+				}
+			}
+		}
+		return false;
+	}
+	
 	public void mouseClicked(MouseEvent e){
 		pickCanvas.setShapeLocation(e);
 		PickResult result = pickCanvas.pickClosest();
 		
-		if (result != null) {
-			Primitive p = (Primitive) result.getNode(PickResult.PRIMITIVE);
+		if(this.isSelectionValid(result)){
+			ISelectable selected = (ISelectable) result.getNode(PickResult.PRIMITIVE);
+			if(selected instanceof PieceUI){
+				selected.select();
+				if(this.selectedPiece != null){
+					this.selectedPiece.deselect();
+				}
+				this.selectedPiece = (ISelectable)selected;
+			}else if(selected instanceof SpaceUI){
+				SpaceUI space = (SpaceUI)selected;
+				Point to = new Point(space.getX(), space.getY());
+				PieceUI pieceUI = (PieceUI)this.selectedPiece;
+				this.parent.getController().move(pieceUI.getModelledObject(), to);
+				this.selectedPiece.deselect();
+				this.selectedPiece = null;
+			}
 
-			if (p != null) {
-				System.out.println(p.getClass().getName());
-				//p.getAppearance().getMaterial().setDiffuseColor(0.0f, 0.0f, 1.0f);
-				((ISelectable)p).select();
-
-			} 
+			this.parent.setMessage("Good selection in UI",MessagePanel.INFO_MESSAGE);
+		}else{
+			this.parent.setMessage("Invalid selection in UI",MessagePanel.ERROR_MESSAGE);
 		}
-
 	}
 	
 }

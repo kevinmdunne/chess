@@ -39,7 +39,7 @@ public class SpaceUI extends Box implements ISelectable{
 		
 		appearance = new Appearance();
 		
-		TextureLoader loader = new TextureLoader(path, "LUMINANCE", new Container());
+		TextureLoader loader = new TextureLoader(path, new Container());
 		Texture texture = loader.getTexture();
 		texture.setBoundaryModeS(Texture.WRAP);
 		texture.setBoundaryModeT(Texture.WRAP);
