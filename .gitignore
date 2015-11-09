@@ -1,0 +1,9 @@
+*.classpath
+*.class
+chess-controller/target
+chess-ui/target
+chess-model/target
+chess-controller/.settings
+chess-ui/.settings
+chess-model/.settings
+*.project
