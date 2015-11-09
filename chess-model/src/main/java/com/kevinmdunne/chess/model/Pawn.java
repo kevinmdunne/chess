@@ -1,7 +1,8 @@
 package com.kevinmdunne.chess.model;
 
-public class Pawn extends Piece{
 
+public class Pawn extends Piece{
+	
 	public Pawn(boolean white) {
 		super(white);
 	}
@@ -21,5 +22,4 @@ public class Pawn extends Piece{
 		}
 		return result;
 	}
-
 }
