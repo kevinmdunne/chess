@@ -237,8 +237,6 @@ public class BoardUI extends MouseAdapter {
 				this.selectedPiece.deselect();
 				this.selectedPiece = null;
 			}
-
-			this.parent.setMessage("Good selection in UI",MessagePanel.INFO_MESSAGE);
 		}else{
 			this.parent.setMessage("Invalid selection in UI",MessagePanel.ERROR_MESSAGE);
 		}

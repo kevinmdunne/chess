@@ -6,12 +6,10 @@ import javax.media.j3d.Material;
 import com.kevinmdunne.chess.model.Piece;
 import com.kevinmdunne.chess.ui.ISelectable;
 import com.sun.j3d.utils.geometry.Box;
-import com.sun.j3d.utils.geometry.Cone;
 import com.sun.j3d.utils.geometry.Primitive;
 
 public class RookUI extends Box implements PieceUI,ISelectable {
 
-	private Cone shape;
 	private Material material;
 	private Piece piece;
 	
@@ -30,11 +28,6 @@ public class RookUI extends Box implements PieceUI,ISelectable {
 		
 		appearance.setMaterial(this.material);
 		this.setAppearance(appearance);
-	}
-	
-	@Override
-	public Primitive getShape() {
-		return shape;
 	}
 	
 	@Override

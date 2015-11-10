@@ -1,10 +1,17 @@
 package com.kevinmdunne.chess.model;
 
+import java.awt.Point;
+import java.util.List;
+
 import com.kevinmdunne.chess.exception.MoveException;
 
 public abstract class Piece {
 
 	private boolean white;
+	
+	public abstract List<Point> getInterveningSpaces(Space from, Space to);
+	
+	public abstract boolean isMoveLegal(Space from, Space to);
 	
 	public Piece(boolean white){
 		this.white = white;
@@ -24,6 +31,15 @@ public abstract class Piece {
 	}
 	
 	public boolean canMove(Space from, Space to){
-		return from.getOccupant().equals(this);
+		boolean result = from.getOccupant().equals(this);
+		if(result){
+			result = (!to.isOccupied() || to.getOccupant().isWhite() != this.isWhite());
+			if(result){
+				result = isMoveLegal(from, to);
+			}
+		}
+		return result;
 	}
+	
+
 }

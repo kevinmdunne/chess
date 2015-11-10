@@ -88,24 +88,39 @@ public class Board {
 		this.spaces[7][7].occupy(rookBlack2);
 	}
 	
+	private boolean checkForCollision(Piece piece,Space from, Space to){
+		List<Point> interveningSpaces = piece.getInterveningSpaces(from, to);
+		for(Point point : interveningSpaces){
+			Space space = this.spaces[point.x][point.y];
+			if(space.isOccupied()){
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	public void movePiece(Space fromSpace, Space toSpace) throws MoveException{
+		Piece piece = fromSpace.getOccupant();
+		if(!checkForCollision(piece,fromSpace,toSpace)){
+			if(toSpace.isOccupied()){
+				this.deadPieces.add(toSpace.getOccupant());
+			}
+			piece.move(fromSpace, toSpace);
+		}else{
+			throw new MoveException("Other pieces are in the way!");
+		}
+	}
+	
 	public void movePiece(Point from, Point to) throws MoveException{
 		Space fromSpace = this.getSpace(from.x, from.y);
 		Space toSpace = this.getSpace(to.x, to.y);
-		Piece piece = fromSpace.getOccupant();
-		
-		if(toSpace.isOccupied()){
-			this.deadPieces.add(toSpace.getOccupant());
-		}
-		piece.move(fromSpace, toSpace);
+		this.movePiece(fromSpace, toSpace);
 	}
 	
 	public void movePiece(Piece piece, Point destination) throws MoveException{
 		Space fromSpace = this.getLocation(piece);
 		Space toSpace = this.getSpace(destination.x, destination.y);
-		if(toSpace.isOccupied()){
-			this.deadPieces.add(toSpace.getOccupant());
-		}
-		piece.move(fromSpace, toSpace);
+		this.movePiece(fromSpace, toSpace);
 	}
 	
 	public List<Piece> getDeadPieces(){

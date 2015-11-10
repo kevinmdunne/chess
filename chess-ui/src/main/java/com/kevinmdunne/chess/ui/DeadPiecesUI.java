@@ -5,12 +5,14 @@ import java.awt.FlowLayout;
 import java.util.List;
 
 import javax.swing.BorderFactory;
+import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.border.BevelBorder;
 
 import com.kevinmdunne.chess.model.Board;
 import com.kevinmdunne.chess.model.Piece;
+import com.kevinmdunne.chess.ui.resources.PieceImageResourceRegistry;
 
 public class DeadPiecesUI extends JPanel{
 
@@ -27,9 +29,11 @@ public class DeadPiecesUI extends JPanel{
 	}
 	
 	private void displayDeadPieces(){
+		PieceImageResourceRegistry registry = PieceImageResourceRegistry.getInstance();
 		List<Piece> deadPieces = model.getDeadPieces();
 		for(Piece piece : deadPieces){
-			JLabel label = new JLabel(piece.getClass().getSimpleName(), JLabel.CENTER);
+			ImageIcon icon = registry.getImage(piece);
+			JLabel label = new JLabel(icon);
 			this.add(label);
 		}
 	}

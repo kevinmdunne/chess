@@ -5,17 +5,16 @@ import javax.media.j3d.Material;
 
 import com.kevinmdunne.chess.model.Piece;
 import com.kevinmdunne.chess.ui.ISelectable;
-import com.sun.j3d.utils.geometry.Cone;
 import com.sun.j3d.utils.geometry.Primitive;
+import com.sun.j3d.utils.geometry.Sphere;
 
-public class BishopUI extends Cone implements PieceUI,ISelectable {
+public class BishopUI extends Sphere implements PieceUI,ISelectable {
 
-	private Cone shape;
 	private Material material;
 	private Piece piece;
 	
 	public BishopUI(Piece piece){
-		super(0.06f, 0.1f,Primitive.GENERATE_NORMALS + Primitive.GENERATE_TEXTURE_COORDS,null);
+		super(0.06f,Primitive.GENERATE_NORMALS + Primitive.GENERATE_TEXTURE_COORDS,null);
 		
 		this.piece = piece;
 		Appearance appearance = new Appearance();
@@ -29,11 +28,6 @@ public class BishopUI extends Cone implements PieceUI,ISelectable {
 		
 		appearance.setMaterial(this.material);
 		this.setAppearance(appearance);
-	}
-	
-	@Override
-	public Primitive getShape() {
-		return shape;
 	}
 	
 	@Override

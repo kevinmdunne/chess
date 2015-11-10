@@ -52,6 +52,7 @@ public class GameUI extends JFrame {
 		this.deadPiecesUI = new DeadPiecesUI(this.controller.getModel());
 		this.add(this.deadPiecesUI,BorderLayout.EAST);
 		
+		this.setTitle("Awesome Chess");
 		this.getContentPane().setSize(1200,900);
 		this.setSize(1200,900);
 	}
@@ -73,7 +74,7 @@ public class GameUI extends JFrame {
 	
 	@Subscribe
 	public void handleInvalidMove(MoveException e){
-		this.messagePanel.setMessage("Invalid move detected!!",MessagePanel.ERROR_MESSAGE);
+		this.messagePanel.setMessage(e.getMessage(),MessagePanel.ERROR_MESSAGE);
 	}
 	
 	@Subscribe
@@ -85,6 +86,7 @@ public class GameUI extends JFrame {
 			this.messagePanel.setPlayerMessage("Black player's turn");
 		}
 		this.deadPiecesUI.refresh();
+		this.messagePanel.setMessage("",MessagePanel.INFO_MESSAGE);
 	}
 	
 	public void setMessage(String message,int messageType){

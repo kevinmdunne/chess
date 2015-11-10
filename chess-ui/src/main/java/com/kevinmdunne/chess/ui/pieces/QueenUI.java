@@ -9,8 +9,7 @@ import com.sun.j3d.utils.geometry.Cone;
 import com.sun.j3d.utils.geometry.Primitive;
 
 public class QueenUI extends Cone implements PieceUI,ISelectable{
-
-	private Cone shape;
+	
 	private Material material;
 	private Piece piece;
 	
@@ -29,11 +28,6 @@ public class QueenUI extends Cone implements PieceUI,ISelectable{
 		
 		appearance.setMaterial(this.material);
 		this.setAppearance(appearance);
-	}
-	
-	@Override
-	public Primitive getShape() {
-		return shape;
 	}
 	
 	@Override
