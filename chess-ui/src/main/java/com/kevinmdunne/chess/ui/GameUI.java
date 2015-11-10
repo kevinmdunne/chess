@@ -69,6 +69,7 @@ public class GameUI extends JFrame {
 	public void handleGameStarted(GameStartedEvent e){
 		this.messagePanel.setMessage("Game on!!");
 		this.messagePanel.setPlayerMessage("White player's turn");
+		this.deadPiecesUI.refresh();
 		this.boardui.refresh();
 	}
 	
