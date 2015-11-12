@@ -1,6 +1,7 @@
 package com.kevinmdunne.chess.model;
 
 import java.awt.Point;
+import java.lang.reflect.Constructor;
 import java.util.List;
 
 import com.kevinmdunne.chess.exception.MoveException;
@@ -41,5 +42,14 @@ public abstract class Piece {
 		return result;
 	}
 	
-
+	public Piece clone(){
+		try{
+			Class<?> clazz = this.getClass();
+			Constructor<?>[] constructor = clazz.getConstructors();
+			Object instance = constructor[0].newInstance(this.white);
+			return (Piece)instance;
+		}catch(Exception e){
+			return null;
+		}
+	}
 }

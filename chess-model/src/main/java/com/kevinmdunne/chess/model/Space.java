@@ -40,4 +40,13 @@ public class Space {
 	public void occupy(Piece occupant){
 		this.occupant = occupant;
 	}
+	
+	public Space clone(){
+		Space clone = new Space(this.x,this.y,this.white);
+		if(this.isOccupied()){
+			Piece clonedPiece = this.getOccupant().clone();
+			clone.occupy(clonedPiece);
+		}
+		return clone;
+	}
 }

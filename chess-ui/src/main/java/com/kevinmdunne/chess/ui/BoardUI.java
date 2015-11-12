@@ -3,8 +3,9 @@ package com.kevinmdunne.chess.ui;
 import java.awt.BorderLayout;
 import java.awt.GraphicsConfiguration;
 import java.awt.Point;
-import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.util.Enumeration;
 
 import javax.media.j3d.AmbientLight;
 import javax.media.j3d.BoundingSphere;
@@ -14,6 +15,7 @@ import javax.media.j3d.DirectionalLight;
 import javax.media.j3d.Group;
 import javax.media.j3d.Transform3D;
 import javax.media.j3d.TransformGroup;
+import javax.swing.BorderFactory;
 import javax.swing.JPanel;
 import javax.vecmath.Color3f;
 import javax.vecmath.Point3d;
@@ -26,71 +28,79 @@ import com.kevinmdunne.chess.ui.message.MessagePanel;
 import com.kevinmdunne.chess.ui.pieces.PieceFactory;
 import com.kevinmdunne.chess.ui.pieces.PieceUI;
 import com.sun.j3d.utils.behaviors.mouse.MouseRotate;
+import com.sun.j3d.utils.behaviors.mouse.MouseWheelZoom;
 import com.sun.j3d.utils.geometry.Primitive;
 import com.sun.j3d.utils.picking.PickCanvas;
 import com.sun.j3d.utils.picking.PickResult;
 import com.sun.j3d.utils.universe.SimpleUniverse;
 
-public class BoardUI extends MouseAdapter {
+public class BoardUI extends JPanel implements MouseListener{
 
-	private Board board;
-	private PickCanvas pickCanvas;
-	private BranchGroup topLevelGroup;
-	private TransformGroup topLevelGroup2;
-	private SimpleUniverse universe;
+	private static final long serialVersionUID = 5946533815295576557L;
 	
 	private GameUI parent;
+	private SimpleUniverse universe;
+	private BranchGroup contentGroup;
+	private TransformGroup behaviourGroup;
+	private PickCanvas pickCanvas;
 	
 	private ISelectable selectedPiece;
 	
 	private SpaceUI[][] spaces;
-
-	public BoardUI(GameUI parent,JPanel container) {
+	
+	private Board board;
+	
+	public BoardUI(GameUI parent){
 		this.parent = parent;
-		this.createUI(container);
-	}
-
-	private void createUI(JPanel container) {
-		container.setLayout(new BorderLayout());
-
-		GraphicsConfiguration config = SimpleUniverse.getPreferredConfiguration();
-		Canvas3D canvas = new Canvas3D(config);
-		container.add(BorderLayout.CENTER, canvas);
-
-		universe = new SimpleUniverse(canvas);
-		universe.getViewingPlatform().setNominalViewingTransform();
-		topLevelGroup = new BranchGroup();
-		topLevelGroup.setCapability(BranchGroup.ALLOW_DETACH);
-		
-		topLevelGroup2 = new TransformGroup();
-		topLevelGroup2.setCapability(TransformGroup.ALLOW_TRANSFORM_READ);
-		topLevelGroup2.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
-		BoundingSphere bounds = new BoundingSphere(new Point3d(0.0,0.0,0.0), 100.0);
-		MouseRotate behavior = new MouseRotate();
-		behavior.setFactor(0.01f);
-		behavior.setTransformGroup(topLevelGroup2);
-		behavior.setSchedulingBounds(bounds);	
-		topLevelGroup2.addChild(behavior);
-		createBoard(topLevelGroup2);
-		topLevelGroup.addChild(topLevelGroup2);
-		
-		addLights(topLevelGroup);
-		
-		universe.getViewingPlatform().setNominalViewingTransform();
-		universe.addBranchGraph(topLevelGroup);
-		
-		rotateBoard(topLevelGroup2);
-		
-		pickCanvas = new PickCanvas(canvas, topLevelGroup);
-		pickCanvas.setMode(PickCanvas.GEOMETRY);
-		
-		universe.getCanvas().addMouseListener(this);
-		universe.getCanvas().addMouseMotionListener(this);
-		
-		canvas.setDoubleBufferEnable(true);
+		this.createUI();
 	}
 	
-	private void createBoard(Group group){
+	public void createUI(){
+		//create canvas and add to UI
+		GraphicsConfiguration config = SimpleUniverse.getPreferredConfiguration();
+		Canvas3D canvas = new Canvas3D(config);
+		canvas.setDoubleBufferEnable(true);
+		this.setLayout(new BorderLayout());
+		this.add(BorderLayout.CENTER, canvas);
+		this.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+		
+		//create universe
+		this.universe = new SimpleUniverse(canvas);
+		this.universe.getViewingPlatform().setNominalViewingTransform();
+		
+		//create toplevel container
+		this.contentGroup = new BranchGroup();
+		
+		//add lighting
+		this.addLights(this.contentGroup);
+		
+		//add mouse behaviors
+		this.addBehaviours();
+		
+		//create the board
+		this.createBoard(this.behaviourGroup);
+		
+		//rotate the board so it is easier to see
+		this.rotateBoard(this.behaviourGroup);
+		
+		//add content group to universe
+		this.universe.addBranchGraph(this.contentGroup);
+		
+		//set up pick canvas for user interaction
+		this.pickCanvas = new PickCanvas(canvas, this.contentGroup);
+		this.pickCanvas.setMode(PickCanvas.GEOMETRY);
+		
+		//add mouse listeners
+		this.universe.getCanvas().addMouseListener(this);
+	}
+	
+	private void rotateBoard(TransformGroup tranformGroup){
+		Transform3D transformX = new Transform3D();
+		transformX.rotX(0.4f);
+		tranformGroup.setTransform(transformX);
+	}
+	
+	private void createBoard(Group container){
 		float xOffset = 0.5f;
 		float zOffset = 0.5f;
 		
@@ -101,22 +111,64 @@ public class BoardUI extends MouseAdapter {
 			white = !white;
 			for(int y = 0;y < 8;y++){
 				this.spaces[x][y] = new SpaceUI(x,y,white);
-				TransformGroup tg = new TransformGroup();
-				tg.setCapability(TransformGroup.ALLOW_TRANSFORM_READ);
-				tg.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
-				tg.setCapability(TransformGroup.ALLOW_CHILDREN_EXTEND);
+				TransformGroup transformGroup = new TransformGroup();
+				transformGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_READ);
+				transformGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
+				transformGroup.setCapability(TransformGroup.ALLOW_CHILDREN_EXTEND);
+				transformGroup.setCapability(Group.ALLOW_CHILDREN_WRITE);
 				Vector3f vector = new Vector3f(x/6.3f - xOffset,-0.01f,y/6.3f - zOffset);
 				Transform3D transform = new Transform3D();
 				transform.setTranslation(vector);
-				tg.setTransform(transform);
-				tg.addChild(this.spaces[x][y]);
-				group.addChild(tg);
+				transformGroup.setTransform(transform);
+				transformGroup.addChild(this.spaces[x][y]);
+				container.addChild(transformGroup);
 				white = !white;
 			}
 		}
 	}
 	
+	private void addBehaviours(){
+		this.behaviourGroup = new TransformGroup();
+		this.behaviourGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_READ);
+		this.behaviourGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
+		this.behaviourGroup.setCapability(Group.ALLOW_CHILDREN_WRITE);
+		this.behaviourGroup.setCapability(Group.ALLOW_CHILDREN_EXTEND);
+		BoundingSphere bounds = new BoundingSphere(new Point3d(0.0,0.0,0.0), 100.0);
+		MouseRotate behavior = new MouseRotate();
+		behavior.setFactor(0.01f);
+		behavior.setTransformGroup(this.behaviourGroup);
+		behavior.setSchedulingBounds(bounds);	
+		this.behaviourGroup.addChild(behavior);
+		
+		MouseWheelZoom zoomBehavior = new MouseWheelZoom();
+		zoomBehavior.setFactor(0.09f);
+		zoomBehavior.setSchedulingBounds(bounds);	
+		zoomBehavior.setTransformGroup(this.behaviourGroup);
+		this.behaviourGroup.addChild(zoomBehavior);
+		
+		this.contentGroup.addChild(this.behaviourGroup);
+	}
+	
+	protected void addLights(BranchGroup group) {
+		BoundingSphere bounds = new BoundingSphere(new Point3d(0.0, 0.0, 0.0),100.0);
+		Color3f ambientColour = new Color3f(1.0f, 1.0f, 1.0f);
+		AmbientLight ambientLight = new AmbientLight(ambientColour);
+		ambientLight.setInfluencingBounds(bounds);
+		Color3f lightColour = new Color3f(1.0f, 1.0f, 1.0f);
+		Vector3f lightDir = new Vector3f(-1.0f, -1.0f, -1.0f);
+		DirectionalLight light = new DirectionalLight(lightColour, lightDir);
+		light.setInfluencingBounds(bounds);
+		group.addChild(ambientLight);
+		group.addChild(light);
+	}
+	
+	public void setBoard(Board board){
+		this.board = board;
+	}
+	
 	public void placePieces(){
+		float xOffset = 0.5f;
+		float zOffset = 0.5f;
 		PieceFactory factory = new PieceFactory();
 		
 		for(int x = 0;x < 8;x++){
@@ -124,78 +176,73 @@ public class BoardUI extends MouseAdapter {
 				Space space = this.board.getSpace(x, y);
 				if(space.isOccupied()){
 					Piece piece = space.getOccupant();
-					SpaceUI spaceUI = this.spaces[x][y];
 					PieceUI pieceUI = factory.createPieceUI(piece);
-					Group parentGroup = (Group)spaceUI.getParent();
 					
-					Vector3f vector = new Vector3f(0, 0.06f, 0);
-					TransformGroup tg = new TransformGroup();
+					Vector3f vector = new Vector3f(x/6.3f - xOffset,pieceUI.getYOffset(),y/6.3f - zOffset);
+					TransformGroup tranformGroup = new TransformGroup();
+					tranformGroup.setName("PieceTransformGroup");
+					tranformGroup.setCapability(TransformGroup.ALLOW_CHILDREN_WRITE);
+					tranformGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
 					Transform3D transform = new Transform3D();
 					transform.setTranslation(vector);
-					tg.setTransform(transform);
-					tg.addChild((Primitive)pieceUI);
+					tranformGroup.setTransform(transform);
+					tranformGroup.addChild((Primitive)pieceUI);
 					
-					BranchGroup bg = new BranchGroup();
-					bg.addChild(tg);
-					parentGroup.addChild(bg);
+					BranchGroup branchGroup = new BranchGroup();
+					branchGroup.setName("PieceBranchGroup");
+					branchGroup.setUserData(piece);
+					branchGroup.setCapability(BranchGroup.ALLOW_CHILDREN_EXTEND);
+					branchGroup.setCapability(BranchGroup.ALLOW_DETACH);
+					branchGroup.setCapability(BranchGroup.ALLOW_CHILDREN_WRITE);
+					branchGroup.setCapability(BranchGroup.ALLOW_CHILDREN_READ);
+					branchGroup.addChild(tranformGroup);
+					this.behaviourGroup.addChild(branchGroup);
 				}
 			}
 		}
 	}
 	
-	private void rotateBoard(TransformGroup tranformGroup){
-		Transform3D transformX = new Transform3D();
-		transformX.rotX(0.4f);
-		tranformGroup.setTransform(transformX);
-	}
-
-	public void setBoard(Board board) {
-		this.board = board;
+	public void refresh(){
+		Enumeration<Object> children = this.behaviourGroup.getAllChildren();
+		while(children.hasMoreElements()){
+			Object child = children.nextElement();
+			if(child instanceof BranchGroup){
+				BranchGroup branchGroup = (BranchGroup)child;
+				if(branchGroup.getName().equals("PieceBranchGroup")){
+					this.behaviourGroup.removeChild(branchGroup);
+				}
+			}
+		}
+		this.placePieces();
 	}
 	
-	public void refresh(){
-		this.topLevelGroup.detach();
-		this.topLevelGroup.removeAllChildren();
+	public void pieceMoved(Point from,Point to){
 		
-		topLevelGroup2 = new TransformGroup();
-		topLevelGroup2.setCapability(TransformGroup.ALLOW_TRANSFORM_READ);
-		topLevelGroup2.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
-		BoundingSphere bounds = new BoundingSphere(new Point3d(0.0,0.0,0.0), 100.0);
-		MouseRotate behavior = new MouseRotate();
-		behavior.setFactor(0.01f);
-		behavior.setTransformGroup(topLevelGroup2);
-		behavior.setSchedulingBounds(bounds);	
-		topLevelGroup2.addChild(behavior);
-		createBoard(topLevelGroup2);
-		topLevelGroup.addChild(topLevelGroup2);
-		
-		addLights(topLevelGroup);
-		
-		universe.getViewingPlatform().setNominalViewingTransform();
-		universe.addBranchGraph(topLevelGroup);
-
-		rotateBoard(topLevelGroup2);
-		
-		this.placePieces();
-//		Canvas3D canvas = this.universe.getCanvas();
-//		canvas.repaint();
 	}
-
-	protected void addLights(BranchGroup b) {
-		// Create a bounds for the lights
-		BoundingSphere bounds = new BoundingSphere(new Point3d(0.0, 0.0, 0.0),100.0);
-		// Set up the ambient light
-		Color3f ambientColour = new Color3f(1.0f, 1.0f, 1.0f);
-		AmbientLight ambientLight = new AmbientLight(ambientColour);
-		ambientLight.setInfluencingBounds(bounds);
-		// Set up the directional light
-		Color3f lightColour = new Color3f(1.0f, 1.0f, 1.0f);
-		Vector3f lightDir = new Vector3f(-1.0f, -1.0f, -1.0f);
-		DirectionalLight light = new DirectionalLight(lightColour, lightDir);
-		light.setInfluencingBounds(bounds);
-		// Add the lights to the BranchGroup
-		b.addChild(ambientLight);
-		b.addChild(light);
+	
+	public void takePiece(Point location){
+//		Space space = this.board.getSpace(location.x, location.y);
+//		Piece piece = space.getOccupant();
+//		
+//		Enumeration<Object> children = this.behaviourGroup.getAllChildren();
+//		while(children.hasMoreElements()){
+//			Object child = children.nextElement();
+//			if(child instanceof BranchGroup){
+//				BranchGroup branchGroup = (BranchGroup)child;
+//				if(branchGroup.getName().equals("PieceBranchGroup")){
+//					Object userData = branchGroup.getUserData();
+//					if(userData.equals(piece)){
+//						for(double a = 1.0;a >= 0;a = a - 0.01){
+//							TransformGroup tg = new TransformGroup();
+//							Transform3D t = new Transform3D();
+//							t.setScale(a);
+//							tg.setTransform(t);
+//							branchGroup.addChild(tg);
+//						}
+//					}
+//				}
+//			}
+//		}
 	}
 	
 	private boolean isSelectionValid(PickResult result){
@@ -217,9 +264,10 @@ public class BoardUI extends MouseAdapter {
 		return false;
 	}
 	
-	public void mouseClicked(MouseEvent e){
-		pickCanvas.setShapeLocation(e);
-		PickResult result = pickCanvas.pickClosest();
+	@Override
+	public void mouseClicked(MouseEvent e) {
+		this.pickCanvas.setShapeLocation(e);
+		PickResult result = this.pickCanvas.pickClosest();
 		
 		if(this.isSelectionValid(result)){
 			ISelectable selected = (ISelectable) result.getNode(PickResult.PRIMITIVE);
@@ -240,6 +288,19 @@ public class BoardUI extends MouseAdapter {
 		}else{
 			this.parent.setMessage("Invalid selection in UI",MessagePanel.ERROR_MESSAGE);
 		}
+		
 	}
-	
+
+	@Override
+	public void mousePressed(MouseEvent e) {}
+
+	@Override
+	public void mouseReleased(MouseEvent e) {}
+
+	@Override
+	public void mouseEntered(MouseEvent e) {}
+
+	@Override
+	public void mouseExited(MouseEvent e) {}
+
 }

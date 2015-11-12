@@ -1,19 +1,21 @@
 package com.kevinmdunne.chess.ui;
 
 import java.awt.BorderLayout;
+import java.awt.Point;
 
-import javax.swing.BorderFactory;
 import javax.swing.JFrame;
-import javax.swing.JPanel;
 
 import com.google.common.eventbus.Subscribe;
 import com.kevinmdunne.chess.controller.GameController;
+import com.kevinmdunne.chess.controller.events.GameOverEvent;
 import com.kevinmdunne.chess.controller.events.GameStartedEvent;
 import com.kevinmdunne.chess.controller.events.ModelUpdatedEvent;
+import com.kevinmdunne.chess.controller.events.PieceMovedEvent;
+import com.kevinmdunne.chess.controller.events.PieceTakenEvent;
+import com.kevinmdunne.chess.controller.events.PlayerInCheckEvent;
 import com.kevinmdunne.chess.exception.MoveException;
 import com.kevinmdunne.chess.ui.control.ControlPanel;
 import com.kevinmdunne.chess.ui.message.MessagePanel;
-
 
 public class GameUI extends JFrame {
 
@@ -35,12 +37,10 @@ public class GameUI extends JFrame {
 	private void initUI(){
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		this.setLayout(new BorderLayout());
-		JPanel boardPanel = new JPanel();
-		boardPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-		this.add(BorderLayout.CENTER, boardPanel);
-		
-		this.boardui = new BoardUI(this,boardPanel);
+
+		this.boardui = new BoardUI(this);
 		this.boardui.setBoard(this.controller.getModel());
+		this.add(BorderLayout.CENTER,this.boardui);
 		
 		this.messagePanel = new MessagePanel();
 		this.add(this.messagePanel,BorderLayout.SOUTH);
@@ -69,7 +69,6 @@ public class GameUI extends JFrame {
 	public void handleGameStarted(GameStartedEvent e){
 		this.messagePanel.setMessage("Game on!!");
 		this.messagePanel.setPlayerMessage("White player's turn");
-		this.deadPiecesUI.refresh();
 		this.boardui.refresh();
 	}
 	
@@ -88,6 +87,35 @@ public class GameUI extends JFrame {
 		}
 		this.deadPiecesUI.refresh();
 		this.messagePanel.setMessage("",MessagePanel.INFO_MESSAGE);
+	}
+	
+	@Subscribe
+	public void handlePlayerInCheck(PlayerInCheckEvent e){
+		String message = "Black player is in check!";
+		if(e.isWhite()){
+			message = "White player is in check!";
+		}
+		this.messagePanel.setMessage(message, MessagePanel.ERROR_MESSAGE);
+	}
+	
+	@Subscribe
+	public void handleGameOver(GameOverEvent e){
+		String message = "Black player WINS!!!";
+		if(e.didWhiteWin()){
+			message = "White player WINS!!!";
+		}
+		this.messagePanel.setMessage(message, MessagePanel.HIGHLIGHT_MESSAGE);
+	}
+	
+	@Subscribe
+	public void handlePieceTaken(PieceTakenEvent e){
+		Point takenPieceLocation = e.getTakenPieceLocation();
+		this.boardui.takePiece(takenPieceLocation);
+	}
+	
+	@Subscribe
+	public void handlePieceMoved(PieceMovedEvent e){
+		this.boardui.pieceMoved(e.getFrom(),e.getTo());
 	}
 	
 	public void setMessage(String message,int messageType){

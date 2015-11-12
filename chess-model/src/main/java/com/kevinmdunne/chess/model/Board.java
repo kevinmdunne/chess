@@ -12,6 +12,16 @@ public class Board {
 	private Space[][] spaces;
 	private List<Piece> deadPieces;
 
+	public Board(Board board){
+		this.deadPieces = new ArrayList<>(32);
+		spaces = new Space[8][8];
+		for(int x = 0;x < 8;x++){
+			for(int y = 0;y < 8;y++){
+				spaces[x][y] = board.getSpace(x, y).clone();
+			}
+		}
+	}
+	
 	public Board(){
 		this.deadPieces = new ArrayList<>(32);
 		this.initSpaces();
@@ -99,13 +109,81 @@ public class Board {
 		return false;
 	}
 	
+	private Space findKing(boolean white){
+		for(int x = 0;x < 8;x++){
+			for(int y = 0;y < 8;y++){
+				Space space = this.spaces[x][y];
+				if(space.isOccupied()){
+					Piece piece = space.getOccupant();
+					if(piece.isWhite() == white){
+						if(piece instanceof King){
+							return space;
+						}
+					}
+				}
+			}
+		}
+		return null;
+	}
+	
+	private List<Space> getAllPieces(boolean white){
+		List<Space> result = new ArrayList<>();
+		for(int x = 0;x < 8;x++){
+			for(int y = 0;y < 8;y++){
+				Space space = this.spaces[x][y];
+				if(space.isOccupied()){
+					Piece piece = space.getOccupant();
+					if(piece.isWhite() == white){
+						result.add(space);
+					}
+				}
+			}
+		}
+		return result;
+	}
+	
+	public boolean isKingInCheck(boolean white){
+		Space toSpace = this.findKing(white);
+		List<Space> fromSpaces = this.getAllPieces(!white);
+		for(Space fromSpace : fromSpaces){
+			Piece piece = fromSpace.getOccupant();
+			if(piece.canMove(fromSpace, toSpace)){
+				if(!checkForCollision(piece,fromSpace,toSpace)){
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+	
+	public boolean isAnyPlayerInCheck(){
+		boolean result = this.isKingInCheck(true);
+		if(!result){
+			result = this.isKingInCheck(false);
+		}
+		return result;
+	}
+	
+	private boolean doesMoveCauseCheck(Space fromSpace, Space toSpace) throws MoveException{
+		Board clone = new Board(this);
+		Space cloneFromSpace = clone.getSpace(fromSpace.getX(), fromSpace.getY());
+		Space cloneToSpace = clone.getSpace(toSpace.getX(), toSpace.getY());
+		Piece piece = cloneFromSpace.getOccupant();
+		piece.move(cloneFromSpace, cloneToSpace);
+		return clone.isKingInCheck(piece.isWhite());
+	}
+	
 	public void movePiece(Space fromSpace, Space toSpace) throws MoveException{
 		Piece piece = fromSpace.getOccupant();
 		if(!checkForCollision(piece,fromSpace,toSpace)){
-			if(toSpace.isOccupied()){
-				this.deadPieces.add(toSpace.getOccupant());
+			if(!this.doesMoveCauseCheck(fromSpace,toSpace)){
+				if(toSpace.isOccupied()){
+					this.deadPieces.add(toSpace.getOccupant());
+				}
+				piece.move(fromSpace, toSpace);
+			}else{
+				throw new MoveException("That move will leave player in check.");
 			}
-			piece.move(fromSpace, toSpace);
 		}else{
 			throw new MoveException("Other pieces are in the way!");
 		}
