@@ -26,6 +26,7 @@ public class King extends Piece {
 		Space move6 = board.getSpace(new Point (originX - 1,originY - 1));
 		Space move7 = board.getSpace(new Point (originX + 1,originY - 1));
 		Space move8 = board.getSpace(new Point (originX - 1,originY + 1));
+		Space move9 = board.getSpace(new Point (originX - 1,originY));
 		
 		if(move1 != null && (!move1.isOccupied() || move1.getOccupant().isWhite() != this.isWhite())){
 			result.add(move1);
@@ -51,7 +52,9 @@ public class King extends Piece {
 		if(move8 != null && (!move8.isOccupied() || move8.getOccupant().isWhite() != this.isWhite())){
 			result.add(move8);
 		}
-		
+		if(move9 != null && (!move9.isOccupied() || move9.getOccupant().isWhite() != this.isWhite())){
+			result.add(move9);
+		}
 		return result;
 	}
 
