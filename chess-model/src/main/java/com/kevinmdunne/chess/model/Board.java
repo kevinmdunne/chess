@@ -173,6 +173,36 @@ public class Board {
 		return clone.isKingInCheck(piece.isWhite());
 	}
 	
+	public boolean detectCheckMate(boolean white){
+		boolean inCheck = this.isKingInCheck(white);
+		if(inCheck){
+			for(int x = 0;x < 8;x++){
+				for(int y = 0;y < 8;y++){
+					Space space = this.spaces[x][y];
+					if(space.isOccupied()){
+						Piece piece = space.getOccupant();
+						if(piece.isWhite() == white){
+							List<Space> possibleMoves = piece.getAllPossibleMoves(this,space);
+							for(Space destination : possibleMoves){
+								try{
+									boolean stillInCheck = this.doesMoveCauseCheck(space, destination);
+									if(!stillInCheck){
+										return false;
+									}
+								}catch(MoveException e){
+									//dodgy move, shouldnt happen
+									e.printStackTrace();
+								}
+							}
+						}
+					}
+				}
+			}
+			return true;
+		}
+		return false;
+	}
+	
 	public void movePiece(Space fromSpace, Space toSpace) throws MoveException{
 		Piece piece = fromSpace.getOccupant();
 		if(!checkForCollision(piece,fromSpace,toSpace)){
@@ -206,7 +236,17 @@ public class Board {
 	}
 	
 	public Space getSpace(int x,int y){
+		if(x < 0 || x >= 8 || y < 0 || y >= 8){
+			return null;
+		}
 		return this.spaces[x][y];
+	}
+	
+	public Space getSpace(Point point){
+		if(point.x < 0 || point.x >= 8 || point.y < 0 || point.y >= 8){
+			return null;
+		}
+		return this.spaces[point.x][point.y];
 	}
 	
 	public Space getLocation(Piece piece){

@@ -1,16 +1,16 @@
 package com.kevinmdunne.chess.controller.events;
 
-import java.awt.Point;
+import com.kevinmdunne.chess.model.Piece;
 
 public class PieceTakenEvent {
 
-	private Point takenPieceLocation;
+	private Piece takenPiece;
 	
-	public PieceTakenEvent(Point takenPieceLocation){
-		this.takenPieceLocation = takenPieceLocation;
+	public PieceTakenEvent(Piece takenPiece){
+		this.takenPiece = takenPiece;
 	}
 	
-	public Point getTakenPieceLocation(){
-		return this.takenPieceLocation;
+	public Piece getTakenPiece(){
+		return this.takenPiece;
 	}
 }

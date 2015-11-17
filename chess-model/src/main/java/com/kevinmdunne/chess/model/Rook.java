@@ -9,6 +9,64 @@ public class Rook extends Piece {
 	public Rook(boolean white) {
 		super(white);
 	}
+	
+	@Override
+	public List<Space> getAllPossibleMoves(Board board,Space origin) {
+		List<Space> result = new ArrayList<>();
+		
+		int originX = origin.getX();
+		int originY = origin.getY();
+		
+		int x = originX + 1;
+		Space space = board.getSpace(x,originY);
+		
+		while(space != null && (!space.isOccupied())){
+			result.add(space);
+			x = x + 1;
+			space = board.getSpace(x,originY);
+		}
+		if(space != null && (!space.isOccupied() || space.getOccupant().isWhite() != this.isWhite())){
+			result.add(space);
+		}
+		
+		x = originX - 1;
+		space = board.getSpace(x,originY);
+		
+		while(space != null && (!space.isOccupied())){
+			result.add(space);
+			x = x - 1;
+			space = board.getSpace(x,originY);
+		}
+		if(space != null && (!space.isOccupied() || space.getOccupant().isWhite() != this.isWhite())){
+			result.add(space);
+		}
+		
+		int y = originY - 1;
+		space = board.getSpace(originX,y);
+		
+		while(space != null && (!space.isOccupied())){
+			result.add(space);
+			y = y - 1;
+			space = board.getSpace(originX,y);
+		}
+		if(space != null && (!space.isOccupied() || space.getOccupant().isWhite() != this.isWhite())){
+			result.add(space);
+		}
+		
+		y = originY + 1;
+		space = board.getSpace(originX,y);
+		
+		while(space != null && (!space.isOccupied())){
+			result.add(space);
+			y = y + 1;
+			space = board.getSpace(originX,y);
+		}
+		if(space != null && (!space.isOccupied() || space.getOccupant().isWhite() != this.isWhite())){
+			result.add(space);
+		}
+		
+		return result;
+	}
 
 	@Override
 	public boolean isMoveLegal(Space from, Space to) {

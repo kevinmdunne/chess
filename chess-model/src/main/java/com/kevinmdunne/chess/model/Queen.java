@@ -1,12 +1,23 @@
 package com.kevinmdunne.chess.model;
 
 import java.awt.Point;
+import java.util.ArrayList;
 import java.util.List;
 
 public class Queen extends Piece {
 
 	public Queen(boolean white) {
 		super(white);
+	}
+	
+	@Override
+	public List<Space> getAllPossibleMoves(Board board,Space origin) {
+		List<Space> result = new ArrayList<>();
+		Rook rook = new Rook(this.isWhite());
+		Bishop bishop = new Bishop(this.isWhite());
+		result = rook.getAllPossibleMoves(board, origin);
+		result.addAll(bishop.getAllPossibleMoves(board, origin));
+		return result;
 	}
 
 	@Override

@@ -2,18 +2,20 @@ package com.kevinmdunne.chess.controller.events;
 
 import java.awt.Point;
 
+import com.kevinmdunne.chess.model.Piece;
+
 public class PieceMovedEvent {
 
-	private Point from;
+	private Piece piece;
 	private Point to;
 	
-	public PieceMovedEvent(Point from,Point to){
-		this.from = from;
+	public PieceMovedEvent(Piece piece,Point to){
+		this.piece = piece;
 		this.to = to;
 	}
 	
-	public Point getFrom(){
-		return this.from;
+	public Piece getPiece(){
+		return this.piece;
 	}
 	
 	public Point getTo(){

@@ -1,12 +1,12 @@
 package com.kevinmdunne.chess.ui;
 
 import java.awt.BorderLayout;
-import java.awt.Point;
 
 import javax.swing.JFrame;
 
 import com.google.common.eventbus.Subscribe;
 import com.kevinmdunne.chess.controller.GameController;
+import com.kevinmdunne.chess.controller.events.CheckMateEvent;
 import com.kevinmdunne.chess.controller.events.GameOverEvent;
 import com.kevinmdunne.chess.controller.events.GameStartedEvent;
 import com.kevinmdunne.chess.controller.events.ModelUpdatedEvent;
@@ -14,6 +14,7 @@ import com.kevinmdunne.chess.controller.events.PieceMovedEvent;
 import com.kevinmdunne.chess.controller.events.PieceTakenEvent;
 import com.kevinmdunne.chess.controller.events.PlayerInCheckEvent;
 import com.kevinmdunne.chess.exception.MoveException;
+import com.kevinmdunne.chess.model.Piece;
 import com.kevinmdunne.chess.ui.control.ControlPanel;
 import com.kevinmdunne.chess.ui.message.MessagePanel;
 
@@ -79,7 +80,6 @@ public class GameUI extends JFrame {
 	
 	@Subscribe
 	public void handleModelUpdated(ModelUpdatedEvent e){
-		this.boardui.refresh();
 		if(this.controller.isWhitePlayersTurn()){
 			this.messagePanel.setPlayerMessage("White player's turn");
 		}else{
@@ -99,6 +99,15 @@ public class GameUI extends JFrame {
 	}
 	
 	@Subscribe
+	public void handleCheckMateEvent(CheckMateEvent e){
+		String message = "Black player WINS!!!";
+		if(e.isWhite()){
+			message = "White player WINS!!!";
+		}
+		this.messagePanel.setMessage(message, MessagePanel.HIGHLIGHT_MESSAGE);
+	}
+	
+	@Subscribe
 	public void handleGameOver(GameOverEvent e){
 		String message = "Black player WINS!!!";
 		if(e.didWhiteWin()){
@@ -109,13 +118,13 @@ public class GameUI extends JFrame {
 	
 	@Subscribe
 	public void handlePieceTaken(PieceTakenEvent e){
-		Point takenPieceLocation = e.getTakenPieceLocation();
-		this.boardui.takePiece(takenPieceLocation);
+		Piece takenPiece = e.getTakenPiece();
+		this.boardui.takePiece(takenPiece);
 	}
 	
 	@Subscribe
 	public void handlePieceMoved(PieceMovedEvent e){
-		this.boardui.pieceMoved(e.getFrom(),e.getTo());
+		this.boardui.pieceMoved(e.getPiece(),e.getTo());
 	}
 	
 	public void setMessage(String message,int messageType){

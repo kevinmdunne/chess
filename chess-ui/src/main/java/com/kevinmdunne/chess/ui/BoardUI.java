@@ -6,6 +6,7 @@ import java.awt.Point;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.Enumeration;
+import java.util.List;
 
 import javax.media.j3d.AmbientLight;
 import javax.media.j3d.BoundingSphere;
@@ -167,8 +168,6 @@ public class BoardUI extends JPanel implements MouseListener{
 	}
 	
 	public void placePieces(){
-		float xOffset = 0.5f;
-		float zOffset = 0.5f;
 		PieceFactory factory = new PieceFactory();
 		
 		for(int x = 0;x < 8;x++){
@@ -176,30 +175,36 @@ public class BoardUI extends JPanel implements MouseListener{
 				Space space = this.board.getSpace(x, y);
 				if(space.isOccupied()){
 					Piece piece = space.getOccupant();
-					PieceUI pieceUI = factory.createPieceUI(piece);
-					
-					Vector3f vector = new Vector3f(x/6.3f - xOffset,pieceUI.getYOffset(),y/6.3f - zOffset);
-					TransformGroup tranformGroup = new TransformGroup();
-					tranformGroup.setName("PieceTransformGroup");
-					tranformGroup.setCapability(TransformGroup.ALLOW_CHILDREN_WRITE);
-					tranformGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
-					Transform3D transform = new Transform3D();
-					transform.setTranslation(vector);
-					tranformGroup.setTransform(transform);
-					tranformGroup.addChild((Primitive)pieceUI);
-					
-					BranchGroup branchGroup = new BranchGroup();
-					branchGroup.setName("PieceBranchGroup");
-					branchGroup.setUserData(piece);
-					branchGroup.setCapability(BranchGroup.ALLOW_CHILDREN_EXTEND);
-					branchGroup.setCapability(BranchGroup.ALLOW_DETACH);
-					branchGroup.setCapability(BranchGroup.ALLOW_CHILDREN_WRITE);
-					branchGroup.setCapability(BranchGroup.ALLOW_CHILDREN_READ);
-					branchGroup.addChild(tranformGroup);
-					this.behaviourGroup.addChild(branchGroup);
+					this.placePiece(x, y, piece, factory);
 				}
 			}
 		}
+	}
+	
+	private void placePiece(float x,float y,Piece piece,PieceFactory factory){
+		float xOffset = 0.5f;
+		float zOffset = 0.5f;
+		PieceUI pieceUI = factory.createPieceUI(piece);
+		
+		Vector3f vector = new Vector3f(x/6.3f - xOffset,pieceUI.getYOffset(),y/6.3f - zOffset);
+		TransformGroup tranformGroup = new TransformGroup();
+		tranformGroup.setName("PieceTransformGroup");
+		tranformGroup.setCapability(TransformGroup.ALLOW_CHILDREN_WRITE);
+		tranformGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
+		Transform3D transform = new Transform3D();
+		transform.setTranslation(vector);
+		tranformGroup.setTransform(transform);
+		tranformGroup.addChild((Primitive)pieceUI);
+		
+		BranchGroup branchGroup = new BranchGroup();
+		branchGroup.setName("PieceBranchGroup");
+		branchGroup.setUserData(piece);
+		branchGroup.setCapability(BranchGroup.ALLOW_CHILDREN_EXTEND);
+		branchGroup.setCapability(BranchGroup.ALLOW_DETACH);
+		branchGroup.setCapability(BranchGroup.ALLOW_CHILDREN_WRITE);
+		branchGroup.setCapability(BranchGroup.ALLOW_CHILDREN_READ);
+		branchGroup.addChild(tranformGroup);
+		this.behaviourGroup.addChild(branchGroup);
 	}
 	
 	public void refresh(){
@@ -216,33 +221,34 @@ public class BoardUI extends JPanel implements MouseListener{
 		this.placePieces();
 	}
 	
-	public void pieceMoved(Point from,Point to){
-		
+	private BranchGroup getBranchGroupForPiece(Piece piece){
+		Enumeration<Object> children = this.behaviourGroup.getAllChildren();
+		while(children.hasMoreElements()){
+			Object child = children.nextElement();
+			if(child instanceof BranchGroup){
+				BranchGroup branchGroup = (BranchGroup)child;
+				if(branchGroup.getName().equals("PieceBranchGroup")){
+					Object userData = branchGroup.getUserData();
+					if(userData.equals(piece)){
+						return branchGroup;
+					}
+				}
+			}
+		}
+		return null;
 	}
 	
-	public void takePiece(Point location){
-//		Space space = this.board.getSpace(location.x, location.y);
-//		Piece piece = space.getOccupant();
-//		
-//		Enumeration<Object> children = this.behaviourGroup.getAllChildren();
-//		while(children.hasMoreElements()){
-//			Object child = children.nextElement();
-//			if(child instanceof BranchGroup){
-//				BranchGroup branchGroup = (BranchGroup)child;
-//				if(branchGroup.getName().equals("PieceBranchGroup")){
-//					Object userData = branchGroup.getUserData();
-//					if(userData.equals(piece)){
-//						for(double a = 1.0;a >= 0;a = a - 0.01){
-//							TransformGroup tg = new TransformGroup();
-//							Transform3D t = new Transform3D();
-//							t.setScale(a);
-//							tg.setTransform(t);
-//							branchGroup.addChild(tg);
-//						}
-//					}
-//				}
-//			}
-//		}
+	public void pieceMoved(Piece piece,Point to){
+		BranchGroup branchGroup = this.getBranchGroupForPiece(piece);
+		branchGroup.detach();
+		branchGroup.removeAllChildren();
+		PieceFactory factory = new PieceFactory();
+		this.placePiece(to.x, to.y, piece, factory);
+	}
+	
+	public void takePiece(Piece piece){
+		BranchGroup branchGroup = this.getBranchGroupForPiece(piece);
+		branchGroup.detach();
 	}
 	
 	private boolean isSelectionValid(PickResult result){
@@ -268,7 +274,7 @@ public class BoardUI extends JPanel implements MouseListener{
 	public void mouseClicked(MouseEvent e) {
 		this.pickCanvas.setShapeLocation(e);
 		PickResult result = this.pickCanvas.pickClosest();
-		
+		this.clearPossibleMoveHighlights();
 		if(this.isSelectionValid(result)){
 			ISelectable selected = (ISelectable) result.getNode(PickResult.PRIMITIVE);
 			if(selected instanceof PieceUI){
@@ -277,6 +283,7 @@ public class BoardUI extends JPanel implements MouseListener{
 					this.selectedPiece.deselect();
 				}
 				this.selectedPiece = (ISelectable)selected;
+				highlightPossibleMoves();
 			}else if(selected instanceof SpaceUI){
 				SpaceUI space = (SpaceUI)selected;
 				Point to = new Point(space.getX(), space.getY());
@@ -288,7 +295,26 @@ public class BoardUI extends JPanel implements MouseListener{
 		}else{
 			this.parent.setMessage("Invalid selection in UI",MessagePanel.ERROR_MESSAGE);
 		}
-		
+	}
+	
+	private void clearPossibleMoveHighlights(){
+		for(int x = 0;x < 8;x++){
+			for(int y = 0;y < 8;y++){
+				this.spaces[x][y].deselect();
+			}
+		}
+	}
+	
+	private void highlightPossibleMoves(){
+		if(this.selectedPiece != null){
+			PieceUI pieceUI = (PieceUI)this.selectedPiece;
+			Piece piece = pieceUI.getModelledObject();
+			Space space = this.board.getLocation(piece);
+			List<Space> moves = piece.getAllPossibleMoves(this.board, space);
+			for(Space move : moves){
+				this.spaces[move.getX()][move.getY()].select();
+			}
+		}
 	}
 
 	@Override

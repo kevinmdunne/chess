@@ -4,6 +4,7 @@ import java.awt.Point;
 import java.util.List;
 
 import com.google.common.eventbus.EventBus;
+import com.kevinmdunne.chess.controller.events.CheckMateEvent;
 import com.kevinmdunne.chess.controller.events.GameOverEvent;
 import com.kevinmdunne.chess.controller.events.GameStartedEvent;
 import com.kevinmdunne.chess.controller.events.ModelUpdatedEvent;
@@ -37,6 +38,10 @@ public class GameController {
 		this.eventBus.post(new GameStartedEvent());
 	}
 	
+	private boolean detectCheckMate(boolean white){
+		return this.model.detectCheckMate(white);
+	}
+	
 	private void detectPlayerInCheck(){
 		if(this.model.isKingInCheck(false)){
 			this.eventBus.post(new PlayerInCheckEvent(false));
@@ -67,17 +72,25 @@ public class GameController {
 	
 	public void move(Point from, Point to){
 		try{
+			Space fromSpace = this.model.getSpace(from.x, from.y);
+			Piece piece = fromSpace.getOccupant();
+			
 			List<Piece> deadPieces = this.model.getDeadPieces();
 			int deadPieceCount = deadPieces.size();
 			this.model.movePiece(from, to);
 			this.whitePlayersTurn = !this.whitePlayersTurn;
 			if(deadPieceCount < deadPieces.size()){
-				this.eventBus.post(new PieceTakenEvent(to));
+				this.eventBus.post(new PieceTakenEvent(deadPieces.get(deadPieceCount)));
 			}
-			this.eventBus.post(new PieceMovedEvent(from,to));
+			
+			this.eventBus.post(new PieceMovedEvent(piece,to));
 			this.eventBus.post(new ModelUpdatedEvent());
-			this.detectPlayerInCheck();
-			this.checkIfGameOver();
+			if(this.detectCheckMate(!piece.isWhite())){
+				this.eventBus.post(new CheckMateEvent(!piece.isWhite()));
+			}else{
+				this.detectPlayerInCheck();
+				this.checkIfGameOver();
+			}
 		}catch(MoveException e){
 			this.eventBus.post(e);
 		}
@@ -90,13 +103,18 @@ public class GameController {
 			this.model.movePiece(piece, destination);
 			this.whitePlayersTurn = !this.whitePlayersTurn;
 			if(deadPieceCount < deadPieces.size()){
-				this.eventBus.post(new PieceTakenEvent(destination));
+				this.eventBus.post(new PieceTakenEvent(deadPieces.get(deadPieceCount)));
 			}
-			Space fromSpace = this.model.getLocation(piece);
-			this.eventBus.post(new PieceMovedEvent(new Point(fromSpace.getX(),fromSpace.getY()),destination));
+
+			this.eventBus.post(new PieceMovedEvent(piece,destination));
 			this.eventBus.post(new ModelUpdatedEvent());
-			this.detectPlayerInCheck();
-			this.checkIfGameOver();
+			
+			if(this.detectCheckMate(!piece.isWhite())){
+				this.eventBus.post(new CheckMateEvent(!piece.isWhite()));
+			}else{
+				this.detectPlayerInCheck();
+				this.checkIfGameOver();
+			}
 		}catch(MoveException e){
 			this.eventBus.post(e);
 		}

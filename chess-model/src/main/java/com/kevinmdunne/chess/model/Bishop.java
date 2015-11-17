@@ -9,6 +9,73 @@ public class Bishop extends Piece {
 	public Bishop(boolean white) {
 		super(white);
 	}
+	
+	@Override
+	public List<Space> getAllPossibleMoves(Board board,Space origin) {
+		List<Space> result = new ArrayList<>();
+		
+		int originX = origin.getX();
+		int originY = origin.getY();
+		
+		int x = originX + 1;
+		int y = originY + 1;
+		
+		Space space = board.getSpace(x,y);
+		
+		while(space != null && (!space.isOccupied())){
+			result.add(space);
+			x = x + 1;
+			y = y + 1;
+			space = board.getSpace(x,y);
+		}
+		if(space != null && (!space.isOccupied() || space.getOccupant().isWhite() != this.isWhite())){
+			result.add(space);
+		}
+		
+		x = originX - 1;
+		y = originY - 1;
+		space = board.getSpace(x,y);
+		
+		while(space != null && (!space.isOccupied())){
+			result.add(space);
+			x = x - 1;
+			y = y - 1;
+			space = board.getSpace(x,y);
+		}
+		if(space != null && (!space.isOccupied() || space.getOccupant().isWhite() != this.isWhite())){
+			result.add(space);
+		}
+		
+		x = originX + 1;
+		y = originY - 1;
+		space = board.getSpace(x,y);
+		
+		while(space != null && (!space.isOccupied())){
+			result.add(space);
+			x = x + 1;
+			y = y - 1;
+			space = board.getSpace(x,y);
+		}
+		if(space != null && (!space.isOccupied() || space.getOccupant().isWhite() != this.isWhite())){
+			result.add(space);
+		}
+		
+		x = originX - 1;
+		y = originY + 1;
+		space = board.getSpace(x,y);
+		
+		while(space != null && (!space.isOccupied())){
+			result.add(space);
+			x = x - 1;
+			y = y + 1;
+			space = board.getSpace(x,y);
+		}
+		if(space != null && (!space.isOccupied() || space.getOccupant().isWhite() != this.isWhite())){
+			result.add(space);
+		}
+		
+		return result;
+	}
 
 	@Override
 	public boolean isMoveLegal(Space from, Space to) {

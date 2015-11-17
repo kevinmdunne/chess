@@ -68,7 +68,7 @@ public class SpaceUI extends Box implements ISelectable{
 	}
 	
 	public void select(){
-		this.material.setDiffuseColor(0.0f, 0.0f, 1.0f);
+		this.material.setDiffuseColor(0.0f, 0.5f, 1.0f);
 	}
 	
 	public void deselect(){

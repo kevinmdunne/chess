@@ -14,6 +14,8 @@ public abstract class Piece {
 	
 	public abstract boolean isMoveLegal(Space from, Space to);
 	
+	public abstract List<Space> getAllPossibleMoves(Board board,Space origin);
+	
 	public Piece(boolean white){
 		this.white = white;
 	}
