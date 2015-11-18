@@ -55,6 +55,7 @@ public class King extends Piece {
 		if(move9 != null && (!move9.isOccupied() || move9.getOccupant().isWhite() != this.isWhite())){
 			result.add(move9);
 		}
+		
 		return result;
 	}
 

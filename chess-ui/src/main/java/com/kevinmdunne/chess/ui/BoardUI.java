@@ -258,7 +258,9 @@ public class BoardUI extends JPanel implements MouseListener{
 				if(shape instanceof PieceUI){
 					PieceUI piece = (PieceUI)shape;
 					if(parent.getController().isWhitePlayersTurn() == piece.isWhite()){
-						return true;
+						if(parent.getController().isMyPiece(piece.isWhite())){
+							return true;
+						}
 					}
 				}else if(shape instanceof SpaceUI){
 					if(this.selectedPiece != null){

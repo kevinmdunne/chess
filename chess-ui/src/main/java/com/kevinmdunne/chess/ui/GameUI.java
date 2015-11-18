@@ -2,6 +2,7 @@ package com.kevinmdunne.chess.ui;
 
 import java.awt.BorderLayout;
 
+import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 
 import com.google.common.eventbus.Subscribe;
@@ -13,6 +14,7 @@ import com.kevinmdunne.chess.controller.events.ModelUpdatedEvent;
 import com.kevinmdunne.chess.controller.events.PieceMovedEvent;
 import com.kevinmdunne.chess.controller.events.PieceTakenEvent;
 import com.kevinmdunne.chess.controller.events.PlayerInCheckEvent;
+import com.kevinmdunne.chess.controller.events.TwoPlayerGameStartedEvent;
 import com.kevinmdunne.chess.exception.MoveException;
 import com.kevinmdunne.chess.model.Piece;
 import com.kevinmdunne.chess.ui.control.ControlPanel;
@@ -56,6 +58,8 @@ public class GameUI extends JFrame {
 		this.setTitle("Awesome Chess");
 		this.getContentPane().setSize(1200,900);
 		this.setSize(1200,900);
+		ImageIcon img = new ImageIcon(GameUI.class.getResource("/images/chess_icon.png"));
+		this.setIconImage(img.getImage());
 	}
 	
 	private void registerListeners(){
@@ -71,6 +75,7 @@ public class GameUI extends JFrame {
 		this.messagePanel.setMessage("Game on!!");
 		this.messagePanel.setPlayerMessage("White player's turn");
 		this.boardui.refresh();
+		this.controlPanel.disableButtons();
 	}
 	
 	@Subscribe
@@ -105,6 +110,7 @@ public class GameUI extends JFrame {
 			message = "White player WINS!!!";
 		}
 		this.messagePanel.setMessage(message, MessagePanel.HIGHLIGHT_MESSAGE);
+		this.controlPanel.enableButtons();
 	}
 	
 	@Subscribe
@@ -114,6 +120,7 @@ public class GameUI extends JFrame {
 			message = "White player WINS!!!";
 		}
 		this.messagePanel.setMessage(message, MessagePanel.HIGHLIGHT_MESSAGE);
+		this.controlPanel.enableButtons();
 	}
 	
 	@Subscribe
@@ -125,6 +132,17 @@ public class GameUI extends JFrame {
 	@Subscribe
 	public void handlePieceMoved(PieceMovedEvent e){
 		this.boardui.pieceMoved(e.getPiece(),e.getTo());
+	}
+	
+	@Subscribe
+	public void handlerTwoPlayerGameStarted(TwoPlayerGameStartedEvent e){
+		if(e.isWhite()){
+			this.messagePanel.setTwoPlayerMessage("You are the WHITE player");
+		}else{
+			this.messagePanel.setTwoPlayerMessage("You are the BLACK player");
+		}
+		
+		this.controlPanel.disableButtons();
 	}
 	
 	public void setMessage(String message,int messageType){

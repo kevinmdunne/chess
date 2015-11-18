@@ -11,21 +11,36 @@ import com.kevinmdunne.chess.controller.events.ModelUpdatedEvent;
 import com.kevinmdunne.chess.controller.events.PieceMovedEvent;
 import com.kevinmdunne.chess.controller.events.PieceTakenEvent;
 import com.kevinmdunne.chess.controller.events.PlayerInCheckEvent;
+import com.kevinmdunne.chess.controller.events.TwoPlayerGameStartedEvent;
 import com.kevinmdunne.chess.exception.MoveException;
 import com.kevinmdunne.chess.model.Board;
 import com.kevinmdunne.chess.model.King;
 import com.kevinmdunne.chess.model.Piece;
 import com.kevinmdunne.chess.model.Space;
+import com.kevinmdunne.chess.remote.IRemoteGameHandler;
 
 public class GameController {
 	
 	private boolean whitePlayersTurn;
 	private EventBus eventBus;
 	private Board model;
+	private IRemoteGameHandler handler;
 	
 	public GameController(){
 		this.eventBus = new EventBus();
 		this.model = new Board();
+	}
+	
+	public void initializeRemoteGame(IRemoteGameHandler handler){
+		this.handler = handler;
+		this.eventBus.post(new TwoPlayerGameStartedEvent(handler.isWhitePlayer()));
+	}
+	
+	public boolean isMyPiece(boolean white){
+		if(handler != null){
+			return handler.isWhitePlayer() == white;
+		}
+		return true;
 	}
 	
 	public Board getModel(){
@@ -36,6 +51,10 @@ public class GameController {
 		this.whitePlayersTurn = true;
 		this.model.reset();
 		this.eventBus.post(new GameStartedEvent());
+	}
+	
+	public void endGame(){
+		this.eventBus.post(new GameOverEvent(whitePlayersTurn));
 	}
 	
 	private boolean detectCheckMate(boolean white){
@@ -70,7 +89,7 @@ public class GameController {
 		}
 	}
 	
-	public void move(Point from, Point to){
+	public void remoteMove(Point from, Point to){
 		try{
 			Space fromSpace = this.model.getSpace(from.x, from.y);
 			Piece piece = fromSpace.getOccupant();
@@ -96,10 +115,44 @@ public class GameController {
 		}
 	}
 	
+	public void move(Point from, Point to){
+		try{
+			Space fromSpace = this.model.getSpace(from.x, from.y);
+			Piece piece = fromSpace.getOccupant();
+			
+			List<Piece> deadPieces = this.model.getDeadPieces();
+			int deadPieceCount = deadPieces.size();
+			this.model.movePiece(from, to);
+			this.whitePlayersTurn = !this.whitePlayersTurn;
+			if(deadPieceCount < deadPieces.size()){
+				this.eventBus.post(new PieceTakenEvent(deadPieces.get(deadPieceCount)));
+			}
+			
+			this.eventBus.post(new PieceMovedEvent(piece,to));
+			this.eventBus.post(new ModelUpdatedEvent());
+			if(this.detectCheckMate(!piece.isWhite())){
+				this.eventBus.post(new CheckMateEvent(!piece.isWhite()));
+			}else{
+				this.detectPlayerInCheck();
+				this.checkIfGameOver();
+			}
+			
+			if(this.handler != null){
+				this.handler.sendMove(from, to);
+			}
+		}catch(MoveException e){
+			this.eventBus.post(e);
+		}
+	}
+	
 	public void move(Piece piece, Point destination){
 		try{
 			List<Piece> deadPieces = this.model.getDeadPieces();
 			int deadPieceCount = deadPieces.size();
+			
+			Space space = this.model.getLocation(piece);
+			Point from = new Point(space.getX(),space.getY());
+			
 			this.model.movePiece(piece, destination);
 			this.whitePlayersTurn = !this.whitePlayersTurn;
 			if(deadPieceCount < deadPieces.size()){
@@ -114,6 +167,10 @@ public class GameController {
 			}else{
 				this.detectPlayerInCheck();
 				this.checkIfGameOver();
+			}
+			
+			if(this.handler != null){
+				this.handler.sendMove(from, destination);
 			}
 		}catch(MoveException e){
 			this.eventBus.post(e);

@@ -21,6 +21,7 @@ public class MessagePanel extends JPanel{
 	
 	private JLabel messageLabel;
 	private JLabel playerTurnLabel;
+	private JLabel twoPlayerLabel; 
 	
 	public MessagePanel(){
 		super();
@@ -34,7 +35,11 @@ public class MessagePanel extends JPanel{
 		this.messageLabel.setPreferredSize(new Dimension(300,18));
 		
 		this.playerTurnLabel = new JLabel();
+		
+		this.twoPlayerLabel= new JLabel("",null,JLabel.CENTER); 
+
 		this.add(this.messageLabel, BorderLayout.EAST);
+		this.add(this.twoPlayerLabel, BorderLayout.CENTER);
 		this.add(this.playerTurnLabel, BorderLayout.WEST);
 	}
 	
@@ -55,5 +60,9 @@ public class MessagePanel extends JPanel{
 	
 	public void setPlayerMessage(String message){
 		this.playerTurnLabel.setText(message);
+	}
+	
+	public void setTwoPlayerMessage(String message){
+		this.twoPlayerLabel.setText(message);
 	}
 }
