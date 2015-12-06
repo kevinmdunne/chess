@@ -9,8 +9,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -64,13 +62,7 @@ public class JoinRemoteGameDialog extends JDialog implements ActionListener,KeyL
 		this.setSize(new Dimension(400,100));
 		this.setResizable(false);
 		this.setLocationRelativeTo(owner);
-		this.addWindowListener(new WindowAdapter() {
-	        @Override 
-	        public void windowClosing(WindowEvent e) {
-	    		setVisible(false);
-	    		dispose();
-	        }
-	    });
+
 	}
 
 	@Override

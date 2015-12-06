@@ -1,0 +1,1 @@
+java -cp chess-ui-1.0-SNAPSHOT.jar;chess-model-1.0-SNAPSHOT.jar;chess-controller-1.0-SNAPSHOT.jar;guava-18.0.jar;j3d-core-1.5.2.jar;j3d-core-utils-1.5.2.jar;vecmath-1.5.2.jar -Djava.library.path=.\lib com.kevinmdunne.chess.ui.GameUI
